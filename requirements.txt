@@ -1,0 +1,5 @@
+customtkinter
+esptool
+pyserial
+packaging
+pillow
