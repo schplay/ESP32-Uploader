@@ -34,14 +34,6 @@ class FlasherInterface:
             try:
                 self.log(f"Starting flash on {self.port} at {self.baud_rate} baud...\n")
                 
-                # Mock args for esptool
-                # We need to simulate the command line arguments
-                # esptool.py -p PORT -b BAUD write_flash -z 0x0 FIRMWARE_PATH
-                
-                # We'll use esptool.main() but we need to capture stdout/stderr
-                # or rely on subclassing/stubbing if esptool doesn't support easy programmatic use with callbacks.
-                # Fortunately, esptool is python.
-                
                 # Redirect stdout/stderr to capture output
                 original_stdout = sys.stdout
                 original_stderr = sys.stderr
