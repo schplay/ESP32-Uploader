@@ -41,6 +41,18 @@ class App(ctk.CTk):
         self.refresh_btn = ctk.CTkButton(self.port_frame, text="Refresh", width=80, command=self.refresh_ports)
         self.refresh_btn.pack(side="right", padx=10)
 
+        # 1b. Baud Rate Selection
+        self.baud_label = ctk.CTkLabel(self.port_frame, text="Baud Rate:")
+        self.baud_label.pack(side="left", padx=10)
+
+        self.baud_rates = ["300", "600", "1200", "2400", "4800", "9600", "14400", "19200", 
+                          "28800", "38400", "57600", "115200", "230400", "460800", "921600", 
+                          "1000000", "2000000"]
+        self.baud_option_menu = ctk.CTkOptionMenu(self.port_frame, values=self.baud_rates)
+        self.baud_option_menu.pack(side="left", padx=10)
+        self.baud_option_menu.set("460800")
+
+
         # 2. File Selection
         self.file_frame = ctk.CTkFrame(self)
         self.file_frame.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
@@ -110,7 +122,13 @@ class App(ctk.CTk):
         self.log_textbox.configure(state="disabled")
         
         # Initialize flasher with selected options
-        self.flasher = FlasherInterface(port, self.firmware_path, callback=self.log_callback)
+        try:
+            baud_rate = int(self.baud_option_menu.get())
+        except ValueError:
+            baud_rate = 460800 # Default fallback
+            
+        self.flasher = FlasherInterface(port, self.firmware_path, baud_rate=baud_rate, callback=self.log_callback)
+
         
         # Start in thread
         self.flasher.flash_firmware()
