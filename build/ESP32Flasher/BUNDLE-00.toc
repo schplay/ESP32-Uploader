@@ -1,0 +1,3 @@
+([('ESP32Flasher',
+   '/Users/david/Documents/ESP32-Uploader/dist/ESP32Flasher',
+   'EXECUTABLE')],)
