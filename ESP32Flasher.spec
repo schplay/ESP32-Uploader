@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['src/main.py'],
+    ['src\\main.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -35,10 +35,4 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-)
-app = BUNDLE(
-    exe,
-    name='ESP32Flasher.app',
-    icon=None,
-    bundle_identifier=None,
 )
