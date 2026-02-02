@@ -14,6 +14,7 @@ class App(ctk.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(3, weight=1)
 
+
         self.flasher = FlasherInterface(None, None)
         self.firmware_path = None
         
@@ -26,6 +27,7 @@ class App(ctk.CTk):
         # Queue for thread-safe logging
         self.log_queue = queue.Queue()
         self.check_log_queue()
+
 
     def create_widgets(self):
         # 1. Port Selection
@@ -48,9 +50,18 @@ class App(ctk.CTk):
         self.baud_rates = ["300", "600", "1200", "2400", "4800", "9600", "14400", "19200", 
                           "28800", "38400", "57600", "115200", "230400", "460800", "921600", 
                           "1000000", "2000000"]
-        self.baud_option_menu = ctk.CTkOptionMenu(self.port_frame, values=self.baud_rates)
-        self.baud_option_menu.pack(side="left", padx=10)
+        self.baud_option_menu = ctk.CTkOptionMenu(self.port_frame, values=self.baud_rates, width=90)
+        self.baud_option_menu.pack(side="left", padx=5)
         self.baud_option_menu.set("460800")
+        
+        # 1c. Chip Type Selection
+        self.chip_label = ctk.CTkLabel(self.port_frame, text="Chip:")
+        self.chip_label.pack(side="left", padx=(10, 5))
+        
+        self.chip_types = ["auto", "esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c6", "esp32h2"]
+        self.chip_option_menu = ctk.CTkOptionMenu(self.port_frame, values=self.chip_types, width=90)
+        self.chip_option_menu.pack(side="left", padx=5)
+        self.chip_option_menu.set("auto")
 
 
         # 2. File Selection
@@ -69,6 +80,7 @@ class App(ctk.CTk):
         # 3. Action Buttons
         self.action_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.action_frame.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+
         
         self.flash_btn = ctk.CTkButton(self.action_frame, text="Flash Firmware", command=self.start_flashing, height=40)
         self.flash_btn.pack(fill="x")
@@ -76,6 +88,7 @@ class App(ctk.CTk):
         # 4. Console/Log
         self.log_textbox = ctk.CTkTextbox(self, state="disabled")
         self.log_textbox.grid(row=3, column=0, padx=20, pady=(10, 20), sticky="nsew")
+
 
     def refresh_ports(self):
         ports = self.flasher.list_ports()
@@ -127,7 +140,13 @@ class App(ctk.CTk):
         except ValueError:
             baud_rate = 460800 # Default fallback
             
-        self.flasher = FlasherInterface(port, self.firmware_path, baud_rate=baud_rate, callback=self.log_callback)
+        self.flasher = FlasherInterface(
+            port, 
+            self.firmware_path, 
+            baud_rate=baud_rate, 
+            chip_type=self.chip_option_menu.get(), 
+            callback=self.log_callback
+        )
 
         
         # Start in thread

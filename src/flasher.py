@@ -7,11 +7,13 @@ import re
 from io import StringIO
 
 class FlasherInterface:
-    def __init__(self, port, firmware_path, baud_rate=460800, callback=None):
+    def __init__(self, port, firmware_path, baud_rate=460800, chip_type="auto", callback=None):
         self.port = port
         self.firmware_path = firmware_path
         self.baud_rate = baud_rate
+        self.chip_type = chip_type
         self.callback = callback
+
         self.is_flashing = False
         self.cancel_requested = False
 
@@ -26,7 +28,7 @@ class FlasherInterface:
             self.callback(message)
 
     def flash_firmware(self):
-        """Runs the esptool flashing process in a separate thread."""
+        """Runs the esptool flashing process in a separate subprocess."""
         self.is_flashing = True
         self.cancel_requested = False
         
@@ -34,48 +36,63 @@ class FlasherInterface:
             try:
                 self.log(f"Starting flash on {self.port} at {self.baud_rate} baud...\n")
                 
-                # Redirect stdout/stderr to capture output
-                original_stdout = sys.stdout
-                original_stderr = sys.stderr
+                # Wait 3 seconds before performing reset
+                self.log("Waiting 3 seconds before reset...\n")
+                time.sleep(3)
                 
+                import subprocess
                 
-                class StreamLogger:
-                    def __init__(self, callback):
-                        self.callback = callback
-                        self.ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-                    
-                    def write(self, text):
-                        # Strip ANSI codes
-                        clean_text = self.ansi_escape.sub('', text)
-                        # Fix line breaks for GUI (convert \r to \n)
-                        clean_text = clean_text.replace('\r\n', '\n').replace('\r', '\n')
-                        if clean_text:
-                            self.callback(clean_text)
-                            
-                    def flush(self):
-                        pass
-
-                sys.stdout = StreamLogger(self.callback)
-                sys.stderr = StreamLogger(self.callback)
-
-                args = [
+                # Build command for subprocess
+                cmd = [
+                    sys.executable, '-m', 'esptool',
                     '--port', self.port,
                     '--baud', str(self.baud_rate),
                     '--before', 'default-reset',
                     '--after', 'hard-reset',
-                    'write-flash',
-                    '-z',
-                    '0x0', self.firmware_path
                 ]
                 
+                # Add chip type if specified
+                if self.chip_type and self.chip_type != "auto":
+                    cmd.extend(['--chip', self.chip_type])
+                
+                cmd.extend([
+                    'write-flash',
+                    '-z',
+                    '--flash-mode', 'keep',
+                    '--flash-freq', 'keep',
+                    '--flash-size', 'keep',
+                    '0x0', self.firmware_path
+                ])
+                
+                # Log the command for debugging
+                self.log(f"Running command: {' '.join(cmd)}\n")
+                
                 try:
-                    esptool.main(args)
-                    self.log("\nFlashing completed successfully!\n")
+                    # Run esptool as subprocess
+                    process = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        bufsize=1
+                    )
+                    
+                    # Read output line by line
+                    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+                    for line in process.stdout:
+                        clean_line = ansi_escape.sub('', line)
+                        self.log(clean_line)
+                    
+                    process.wait()
+                    
+                    if process.returncode == 0:
+                        self.log("\nFlashing completed successfully!\n")
+                    else:
+                        self.log(f"\nError during flashing (exit code: {process.returncode})\n")
+                        
                 except Exception as e:
                     self.log(f"\nError during flashing: {str(e)}\n")
                 finally:
-                    sys.stdout = original_stdout
-                    sys.stderr = original_stderr
                     self.is_flashing = False
                     
             except Exception as e:
