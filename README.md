@@ -43,18 +43,21 @@ python -m src.main
 2.  **Select Firmware**: Browse for your firmware file. It is recommended to use the generated `merged.bin` file which includes everything needed at offset `0x0`.
 3.  **Flash**: Click the "Flash Firmware" button. The log will show progress and verify success.
 
-### Building as Executable
+### Building as Standalone Application
 
-To distribute this tool as a standalone `.exe` without requiring Python installed on the target machine, use PyInstaller:
+To create a standalone executable that doesn't require Python:
 
-```bash
-pip install pyinstaller
-pyinstaller --noconsole --onefile --name "ESP32Flasher" src/main.py
-```
+**Windows:**
+1.  Double-click **`build.bat`**.
+2.  The executable will be created in `dist/ESP32 Uploader.exe`.
 
-The executable will be generated in the `dist` folder.
+**macOS / Linux:**
+1.  Make the script executable: `chmod +x build.sh`
+2.  Run the script: `./build.sh`
+3.  The app will be created in the `dist/` folder.
+
+*Note: These scripts automatically handle bundling the required `esptool` stub binaries and data files (`--collect-all esptool`), ensuring the frozen app works correctly.*
 
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
